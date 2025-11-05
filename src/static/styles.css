@@ -126,6 +126,24 @@ section h3 {
   word-break: break-word;
 }
 
+/* Remove/unregister button next to participant */
+.participant .remove-btn {
+  margin-left: auto; /* push to the far right */
+  background: transparent;
+  border: none;
+  color: #c62828;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
+.participant .remove-btn:hover,
+.participant .remove-btn:focus {
+  background-color: rgba(198, 40, 40, 0.08);
+  outline: none;
+}
+
 /* Small muted hint when no participants */
 .no-participants {
   color: #666;

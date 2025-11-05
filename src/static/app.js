@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <h4>${name}</h4>
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
-          <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <p class="availability"><strong>Availability:</strong> ${spotsLeft} spots left</p>
         `;
 
         // Create participants container
@@ -74,8 +74,59 @@ document.addEventListener("DOMContentLoaded", () => {
             spanName.className = "name";
             spanName.textContent = display;
 
+            // Remove/unregister button
+            const removeBtn = document.createElement("button");
+            removeBtn.className = "remove-btn";
+            removeBtn.title = "Unregister";
+            removeBtn.setAttribute("aria-label", `Unregister ${display}`);
+            removeBtn.textContent = "✖";
+
+            // When clicked, call unregister endpoint and update UI
+            removeBtn.addEventListener("click", async () => {
+              try {
+                const resp = await fetch(
+                  `/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(p)}`,
+                  { method: "POST" }
+                );
+
+                const resJson = await resp.json();
+
+                if (resp.ok) {
+                  // remove the list item from DOM
+                  li.remove();
+
+                  // update availability text
+                  const avail = activityCard.querySelector(".availability");
+                  if (avail) {
+                    // compute new spots left and update local participants list
+                    const currentParticipants = details.participants.filter((pp) => pp !== p);
+                    details.participants = currentParticipants;
+                    const newSpots = details.max_participants - currentParticipants.length;
+                    avail.innerHTML = `<strong>Availability:</strong> ${newSpots} spots left`;
+                  }
+
+                  messageDiv.textContent = resJson.message || `Unregistered ${display}`;
+                  messageDiv.className = "message success";
+                  messageDiv.classList.remove("hidden");
+
+                  // hide message after 5s
+                  setTimeout(() => messageDiv.classList.add("hidden"), 5000);
+                } else {
+                  messageDiv.textContent = resJson.detail || "Failed to unregister";
+                  messageDiv.className = "message error";
+                  messageDiv.classList.remove("hidden");
+                }
+              } catch (err) {
+                console.error("Error unregistering:", err);
+                messageDiv.textContent = "Failed to unregister. Please try again.";
+                messageDiv.className = "message error";
+                messageDiv.classList.remove("hidden");
+              }
+            });
+
             li.appendChild(avatar);
             li.appendChild(spanName);
+            li.appendChild(removeBtn);
             list.appendChild(li);
           });
         } else {
@@ -122,6 +173,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Refresh activities so the new participant appears without a page reload
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
